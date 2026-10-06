@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POM Presentations — Teacher View</title>
+<style>
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6fa;color:#1d2433}
+.box{max-width:420px;margin:30vh auto 0;padding:0 16px;text-align:center;font-size:16px;line-height:1.5}
+button{margin-top:12px;padding:10px 18px;font-size:15px;border:0;border-radius:8px;background:#1F3864;color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="box" id="msg">Opening the page…</div>
+<script>
+// Loads the page from the POM booking script without sending any Google account,
+// so Google's "several signed-in accounts" error cannot happen.
+// A copy is kept in this browser so later visits open at once; a fresh copy is fetched every time.
+(function(){
+  var EXEC='https://script.google.com/macros/s/AKfycbzP4maz1VRpijaro_qLmoy34HfqHSK_rczcCgC9pG3YwKm4kHX49rNi3RD_oZWiwhTh/exec';
+  var PAGE='teacher', MARK='getAdmin';
+  var q='', key='', store='pom26_'+PAGE;
+  if(PAGE==='teacher'){
+    key=new URLSearchParams(location.search).get('k')||'';
+    if(!key){document.getElementById('msg').textContent='This link is not complete.';return;}
+    q='&k='+encodeURIComponent(key);
+  }
+  var saved=null;
+  try{ saved=localStorage.getItem(store); }catch(e){}
+  function good(html){ return html && html.indexOf(MARK)>=0 && html.indexOf('<html')>=0; }
+  function show(html){ document.open(); document.write(html); document.close(); }
+  function fail(text){
+    document.getElementById('msg').innerHTML=(text||'The page did not open. Check your internet connection.')+'<br><button onclick="location.reload()">Try again</button>';
+  }
+  // Google's relay sometimes drops a reply, so try up to 4 times.
+  function get(n){
+    return fetch(EXEC+'?raw=1'+q+'&t='+Date.now(),{credentials:'omit',redirect:'follow',cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw 0; return r.text(); })
+      .then(function(html){
+        if(html.indexOf('This link is not valid')===0) throw 'bad';
+        if(!good(html)) throw 0; return html; })
+      .catch(function(e){
+        if(e==='bad' || n>=4) throw e;
+        return new Promise(function(res){ setTimeout(res,700*n); }).then(function(){ return get(n+1); });
+      });
+  }
+  var latest=get(1).then(function(html){ try{ localStorage.setItem(store,html); }catch(e){} return html; });
+  if(good(saved)){ latest.catch(function(){}); show(saved); }
+  else latest.then(show).catch(function(e){ fail(e==='bad'?'This link is not valid.':''); });
+})();
+</script>
+</body>
+</html>

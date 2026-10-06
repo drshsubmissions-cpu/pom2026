@@ -26,9 +26,12 @@ button{margin-top:12px;padding:10px 18px;font-size:15px;border:0;border-radius:8
     q='&k='+encodeURIComponent(key);
   }
   var saved=null;
-  try{ saved=localStorage.getItem(store); }catch(e){}
+  // The teacher page is always fetched fresh, so a wrong key never shows a saved page.
+  if(PAGE!=='teacher'){ try{ saved=localStorage.getItem(store); }catch(e){} }
   function good(html){ return html && html.indexOf(MARK)>=0 && html.indexOf('<html')>=0; }
-  function show(html){ document.open(); document.write(html); document.close(); }
+  var T=document.title;
+  // Write the page only after this opener has finished loading, or the old text stays on screen.
+  function show(html){ setTimeout(function(){ document.open(); document.write(html); document.close(); if(!document.title) document.title=T; },0); }
   function fail(text){
     document.getElementById('msg').innerHTML=(text||'The page did not open. Check your internet connection.')+'<br><button onclick="location.reload()">Try again</button>';
   }
@@ -44,7 +47,7 @@ button{margin-top:12px;padding:10px 18px;font-size:15px;border:0;border-radius:8
         return new Promise(function(res){ setTimeout(res,700*n); }).then(function(){ return get(n+1); });
       });
   }
-  var latest=get(1).then(function(html){ try{ localStorage.setItem(store,html); }catch(e){} return html; });
+  var latest=get(1).then(function(html){ if(PAGE!=='teacher'){ try{ localStorage.setItem(store,html); }catch(e){} } return html; });
   if(good(saved)){ latest.catch(function(){}); show(saved); }
   else latest.then(show).catch(function(e){ fail(e==='bad'?'This link is not valid.':''); });
 })();

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POM Teacher</title>
+<link rel="manifest" href="teacher.webmanifest">
+<meta name="theme-color" content="#0F3B37">
+<link rel="apple-touch-icon" href="icon-teacher-192.png">
+<style>
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6fa;color:#1d2433}
+.box{max-width:420px;margin:28vh auto 0;padding:0 16px;text-align:center;font-size:16px;line-height:1.5}
+input{width:100%;box-sizing:border-box;margin-top:12px;padding:10px 12px;font-size:15px;border:1px solid #c9d2dc;border-radius:8px}
+button{margin-top:12px;padding:10px 18px;font-size:15px;border:0;border-radius:8px;background:#0F3B37;color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="box" id="msg">Opening the teacher view…</div>
+<script>
+// The teacher's own app. It opens the new teacher view (the portal page with the teacher key) without a code.
+// The key comes once from the link (teach.html?k=...) or from the box below, and is kept on this device only.
+// Later opens of the app read it from this device, so the app's icon opens straight into the teacher view.
+(function(){
+  var EXEC='https://script.google.com/macros/s/AKfycbzP4maz1VRpijaro_qLmoy34HfqHSK_rczcCgC9pG3YwKm4kHX49rNi3RD_oZWiwhTh/exec';
+  var MARK='POM Learning Portal', KEYSTORE='pom26_tkey';
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
+  function get(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}}
+  function put(k,v){try{if(v)localStorage.setItem(k,v);else localStorage.removeItem(k);}catch(e){}}
+  var key=new URLSearchParams(location.search).get('k')||get(KEYSTORE);
+  var box=document.getElementById('msg');
+  function ask(text){
+    box.innerHTML=(text?'<p>'+text+'</p>':'')+'<p><b>POM Teacher</b><br>Type your teacher key once. It is kept on this device, so the app opens straight away next time.</p>'+
+      '<input id="k" type="password" autocomplete="off" placeholder="Teacher key"><button id="go">Open</button>';
+    document.getElementById('go').onclick=function(){var v=document.getElementById('k').value.trim();if(v){key=v;start();}};
+  }
+  function show(html){
+    // the page reads the key from the address, so it is put there before the page is written
+    history.replaceState(null,'','teach.html?k='+encodeURIComponent(key));
+    setTimeout(function(){document.open();document.write(html);document.close();},0);
+  }
+  function fetchPage(n){
+    return fetch(EXEC+'?raw=1&page=portal&t='+Date.now(),{credentials:'omit',redirect:'follow',cache:'no-store'})
+      .then(function(r){if(!r.ok)throw 0;return r.text();})
+      .then(function(h){if(h.indexOf(MARK)<0||h.indexOf('<html')<0)throw 0;return h;})
+      .catch(function(e){if(n>=4)throw e;return new Promise(function(ok){setTimeout(ok,700*n);}).then(function(){return fetchPage(n+1);});});
+  }
+  // the key is checked with the server before it is kept
+  function check(){
+    return fetch(EXEC,{method:'POST',credentials:'omit',redirect:'follow',cache:'no-store',body:JSON.stringify({fn:'mnAdmin',args:[key]})})
+      .then(function(r){return r.json();});
+  }
+  function start(){
+    box.textContent='Opening the teacher view…';
+    check().then(function(o){
+      if(!o||!o.ok){put(KEYSTORE,'');ask(o&&/not valid/i.test(o.error||'')?'That key is not right.':'The key could not be checked. Try again.');return;}
+      put(KEYSTORE,key);
+      return fetchPage(1).then(show);
+    }).catch(function(){box.innerHTML='The page did not open. Check your internet connection.<br><button onclick="location.reload()">Try again</button>';});
+  }
+  if(key)start();else ask('');
+})();
+</script>
+</body>
+</html>

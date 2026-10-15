@@ -21,7 +21,7 @@ button{margin-top:12px;padding:10px 18px;font-size:15px;border:0;border-radius:8
 // The key comes once from the link (teach.html?k=...) or from the box below, and is kept on this device only.
 // Later opens of the app read it from this device, so the app's icon opens straight into the teacher view.
 (function(){
-  var EXEC='https://script.google.com/macros/s/AKfycbzP4maz1VRpijaro_qLmoy34HfqHSK_rczcCgC9pG3YwKm4kHX49rNi3RD_oZWiwhTh/exec';
+  var EXEC='https://pom.srv1499263.hstgr.cloud/exec';
   var MARK='POM Learning Portal', KEYSTORE='pom26_tkey';
   if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
   function get(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}}
